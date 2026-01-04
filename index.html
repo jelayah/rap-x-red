@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Rap Life - The Industry</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+            },
+            colors: {
+              'brand-bg': '#0D0C1D',
+              'brand-surface': '#1A1A2E',
+              'brand-dialog': '#2A2A3E',
+              'brand-primary-start': '#7F00FF',
+              'brand-primary-end': '#5533FF',
+              'brand-accent-start': '#A855F7',
+              'brand-accent-end': '#F97316',
+              'brand-text': '#FFFFFF',
+              'brand-text-muted': '#A9B2C1',
+              'chart-bg': '#F4F4F4',
+              'chart-text': '#000000',
+              'chart-text-muted': '#6A6A6A',
+              'chart-accent': '#26D373',
+            }
+          }
+        }
+      }
+    </script>
+<script type="importmap">
+{
+  "imports": {
+    "react-dom/": "https://esm.sh/react-dom@^19.1.1/",
+    "@google/genai": "https://esm.sh/@google/genai@^1.15.0",
+    "react": "https://esm.sh/react@^19.1.1",
+    "react/": "https://esm.sh/react@^19.1.1/"
+  }
+}
+</script>
+</head>
+<body class="bg-brand-bg text-brand-text font-sans">
+<div id="root"></div>
+<script type="module" src="/index.tsx"></script>
+</body>
+</html>
