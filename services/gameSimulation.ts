@@ -253,7 +253,11 @@ export const simulateWeek = async (state: GameStateBundle, options: { fast?: boo
             const pos = i + 1;
             if (!item.charts) item.charts = {};
             const prevPos = previousPositions.get(item.id) || null;
-            const weeksOnChart = (item.charts[chartId]?.weeksOnChart || 0) + 1;
+            
+            // Fix: Correctly determine lifetime weeks by checking history
+            const prevWeeks = item.chartHistory?.[chartId]?.weeksOnChart || 0;
+            const weeksOnChart = prevWeeks + 1;
+            
             const peakPosition = (item.charts[chartId]?.peakPosition && item.charts[chartId].peakPosition < pos) ? item.charts[chartId].peakPosition : pos;
 
             if (!item.chartHistory) item.chartHistory = {};
@@ -272,8 +276,15 @@ export const simulateWeek = async (state: GameStateBundle, options: { fast?: boo
 
         return topItems.map(s => {
             const chartInfo = s.charts[chartId];
+            
+            // Fix: Logic to identify re-entry by checking if it wasn't on last week but has previous history
             let status: ChartEntry['status'] = !chartInfo.lastWeekPosition ? 'new' : chartInfo.position < chartInfo.lastWeekPosition ? 'up' : chartInfo.position > chartInfo.lastWeekPosition ? 'down' : 'same';
-            if (status === 'new' && s.chartHistory?.[chartId] && s.chartHistory[chartId].weeksOnChart > 1) status = 're-entry';
+            
+            // If status is new but cumulative weeks in history > 1, it's a re-entry
+            if (status === 'new' && s.chartHistory?.[chartId] && s.chartHistory[chartId].weeksOnChart > 1) {
+                status = 're-entry';
+            }
+
             return { position: chartInfo.position, lastWeekPosition: chartInfo.lastWeekPosition, peakPosition: chartInfo.peakPosition, weeksOnChart: chartInfo.weeksOnChart, title: s.title, artist: s.artistName, coverArt: s.coverArt, itemId: s.id, itemType, status, chartId };
         });
     };

@@ -81,7 +81,7 @@ export function generateWeeklyTweets(
             } else if (entry.position < (prevEntry?.position || 999)) {
                 // RISE
                 const delta = (prevEntry?.position || 999) - entry.position;
-                if (delta < 500) { // Safety check for re-entries that were flagged as 'up'
+                if (delta < 500) { 
                     caption = `‘${entry.title}’ by ${player.artistName} rises ${delta} spots to #${entry.position} on the ${chartName}.`;
                 }
             } else if (entry.position > (prevEntry?.position || 0)) {

@@ -2,9 +2,16 @@
 import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import type { Player, Song, Playlist } from '../types';
 
-// Fix: Direct initialization using process.env.API_KEY as per guidelines.
-// Assume the API key is pre-configured and valid.
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Access the API key via a safer check to prevent "process is not defined" crashes on some deployment platforms
+const getApiKey = () => {
+    try {
+        return process.env.API_KEY || '';
+    } catch (e) {
+        return '';
+    }
+};
+
+const ai = new GoogleGenAI({ apiKey: getApiKey() });
 
 /**
  * Sanitizes a string that might contain Markdown code blocks.
@@ -16,7 +23,6 @@ const sanitizeJsonString = (str: string): string => {
 
 export const generateSongTitle = async (genre: string, mood: string, topic: string): Promise<string> => {
   try {
-    // Fix: Using gemini-3-flash-preview for basic text tasks as per guidelines.
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Generate a short, catchy, and creative rap song title. The song's genre is ${genre}, the mood is ${mood}, and the topic is ${topic}. Only return the title, nothing else.`,
@@ -38,7 +44,6 @@ export const generateSongTitle = async (genre: string, mood: string, topic: stri
 
 export const generateBatchSongTitles = async (count: number): Promise<string[]> => {
   try {
-    // Fix: Standardizing on gemini-3-flash-preview for batch text generation.
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Generate a list of ${count} creative, realistic rap song titles. The topics can range from love, life, struggles, to success and money. Return ONLY a valid JSON object with a single key "titles" containing an array of strings. Example: {"titles": ["Midnight Drive", "Lost & Found", "Crown Heavy"]}`,
@@ -74,7 +79,6 @@ export const generateBatchSongTitles = async (count: number): Promise<string[]> 
 
 export const generateMusicFact = async (): Promise<string> => {
     try {
-        // Fix: Using gemini-3-flash-preview for loading screen facts.
         const response = await ai.models.generateContent({
             model: 'gemini-3-flash-preview',
             contents: "Generate a single, interesting, and short fun fact about the music industry. Focus on record-breaking debuts, impressive awards, or incredible achievements by artists like Nicki Minaj, Drake, or Michael Jackson. The fact should be one sentence and ready for display on a loading screen.",
@@ -94,7 +98,6 @@ export const generateMusicFact = async (): Promise<string> => {
     }
 }
 
-// Fixed: Changed to a static placeholder with variety to avoid AI overhead.
 export const generateIndustryEvent = async (player: Player): Promise<{ title: string; description: string }> => {
   const events = [
     { title: "Static on the Airwaves", description: "Industry insiders are buzzing about a potential distributor shift. Expect minor market fluctuations." },
@@ -125,7 +128,6 @@ export const generatePlaylists = async (player: Player, songs: Song[]): Promise<
     Return ONLY JSON.`;
 
     try {
-        // Fix: Using gemini-3-flash-preview for playlist metadata generation.
         const response = await ai.models.generateContent({
             model: "gemini-3-flash-preview",
             contents: prompt,
