@@ -3,19 +3,13 @@ import React, { useState } from 'react';
 import type { Player, Song, NPCArtist } from '../types';
 import CreditsModal from './CreditsModal';
 import { NPC_ARTISTS } from '../data/artists';
+import { getDisplayGenre } from '../constants';
 
 interface RapifySongDetailScreenProps {
     song: Song;
     player: Player;
     onBack: () => void;
 }
-
-const Icon = ({ path, className = 'w-8 h-8' }: { path: string; className?: string }) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={className}>
-        <path strokeLinecap="round" strokeLinejoin="round" d={path} />
-    </svg>
-);
-
 
 const RapifySongDetailScreen: React.FC<RapifySongDetailScreenProps> = ({ song, player, onBack }) => {
     const [showCredits, setShowCredits] = useState(false);
@@ -25,17 +19,15 @@ const RapifySongDetailScreen: React.FC<RapifySongDetailScreenProps> = ({ song, p
         ? player
         : NPC_ARTISTS.find(a => a.name === song.artistName);
 
-    const coverArtSrc = song.coverArt || `https://source.unsplash.com/400x400/?${encodeURIComponent(song.title + ' music')}`;
+    const coverArtSrc = song.coverArt || `https://source.unsplash.com/600x600/?${encodeURIComponent(song.title + ' music cover art')}`;
     
-    let artistImageSrc = `https://source.unsplash.com/100x100/?${encodeURIComponent(song.artistName + ' portrait')}`;
+    let artistImageSrc = "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?q=80&w=100";
     if (artistForImage) {
         const isPlayerProfile = 'money' in artistForImage;
         artistImageSrc = isPlayerProfile
-            ? artistForImage.aboutImage || `https://source.unsplash.com/100x100/?${encodeURIComponent(artistForImage.artistName + ' portrait')}`
-            : `https://source.unsplash.com/100x100/?${encodeURIComponent(artistForImage.artistImage)}`;
+            ? (artistForImage as Player).aboutImage || artistImageSrc
+            : `https://source.unsplash.com/100x100/?portrait`;
     }
-
-    const rapifyStreams = song.rapifyStreams;
 
     const formatDuration = (seconds: number) => {
         const minutes = Math.floor(seconds / 60);
@@ -52,39 +44,58 @@ const RapifySongDetailScreen: React.FC<RapifySongDetailScreenProps> = ({ song, p
     return (
         <>
             {showCredits && <CreditsModal song={song} player={player} onClose={() => setShowCredits(false)} />}
-            <div className="bg-gradient-to-b from-[#501828] to-[#121212] text-white min-h-screen font-sans absolute inset-0 z-20 overflow-y-auto">
-                <button onClick={onBack} className="absolute top-4 left-4 z-30 bg-black/50 rounded-full p-2 hover:bg-black/80">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
-                    </svg>
-                </button>
+            <div className="bg-[#121212] text-white min-h-screen font-sans absolute inset-0 z-[80] overflow-y-auto scrollbar-hide pb-32">
+                <header className="sticky top-0 z-30 flex items-center h-16 px-4 bg-[#121212]/80 backdrop-blur-md border-b border-white/5">
+                    <button onClick={onBack} className="p-2 -ml-2 rounded-full hover:bg-white/10 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" /></svg>
+                    </button>
+                </header>
 
-                <main className="p-6 pt-20">
+                <div className="bg-gradient-to-b from-[#404040] to-[#121212] p-6 pt-4">
                     <div className="flex flex-col md:flex-row items-center md:items-end gap-6">
-                        <img src={coverArtSrc} alt={song.title} className="w-48 h-48 md:w-60 md:h-60 object-cover rounded-md shadow-2xl flex-shrink-0" />
+                        <img src={coverArtSrc} alt={song.title} className="w-48 h-48 md:w-60 md:h-60 object-cover shadow-2xl rounded flex-shrink-0" />
                         <div className="flex flex-col items-center md:items-start text-center md:text-left">
-                            <p className="font-bold text-sm">Song</p>
-                            <h1 className="text-5xl md:text-8xl font-black tracking-tighter break-words">{song.title}</h1>
-                            <div className="flex items-center flex-wrap justify-center gap-x-2 mt-4 text-sm font-semibold">
+                            <p className="font-bold text-xs uppercase tracking-widest">Single</p>
+                            <h1 className="text-5xl md:text-8xl font-black tracking-tighter leading-tight">{song.title}</h1>
+                            <div className="flex items-center flex-wrap justify-center md:justify-start gap-x-2 mt-4 text-sm font-bold">
                                 <img src={artistImageSrc} alt={song.artistName} className="w-6 h-6 rounded-full object-cover"/>
-                                <span>{artistDisplayName}</span>
+                                <span className="hover:underline cursor-pointer">{artistDisplayName}</span>
                                 <span className="text-gray-400">•</span>
-                                <span>{releaseYear}</span>
+                                <span className="text-gray-300">{releaseYear}</span>
                                 <span className="text-gray-400">•</span>
-                                <span>{formatDuration(song.duration)}</span>
+                                <span className="text-gray-400 font-medium">{formatDuration(song.duration)}</span>
                                 <span className="text-gray-400">•</span>
-                                <span className="text-[#1ED760] font-black">{rapifyStreams.toLocaleString()} Rapify plays</span>
+                                <span className="text-[#1ED760] font-black">{song.rapifyStreams.toLocaleString()} plays</span>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div className="flex items-center gap-6 my-8">
+                <div className="p-6">
+                    <div className="flex items-center gap-8 mb-10">
                         <button className="bg-[#1DB954] rounded-full p-4 hover:scale-105 transition-transform flex items-center justify-center shadow-xl">
-                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-black"><path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.647c1.295.748 1.295 2.535 0 3.284L7.279 20.99c-1.25.72-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" /></svg>
+                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-black"><path fillRule="evenodd" d="M7.05 3.606l13.49 7.79a.7.7 0 010 1.212L7.05 20.398a.7.7 0 01-1.05-.606V4.212a.7.7 0 011.05-.606z" clipRule="evenodd" /></svg>
                         </button>
-                        <button onClick={() => setShowCredits(true)} className="text-gray-300 hover:text-white border-2 border-gray-600 rounded-full px-4 py-1 text-xs font-bold uppercase tracking-widest">View Credits</button>
+                        <button onClick={() => setShowCredits(true)} className="text-gray-400 hover:text-white border border-gray-600 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-widest transition-all">View Credits</button>
                     </div>
-                </main>
+
+                    <div className="group grid grid-cols-[30px_1fr_auto] items-center gap-4 p-2 rounded-md hover:bg-white/10 transition-colors cursor-pointer">
+                        <span className="text-center font-semibold text-[#1DB954] text-sm">1</span>
+                        <div className="flex flex-col min-w-0">
+                            <div className="flex items-center gap-2">
+                                <span className="text-white font-bold text-[15px] truncate">{song.title}</span>
+                                {song.version === 'Explicit' && <span className="bg-[#3e3e3e] text-[#9ca3af] text-[8px] px-1 rounded-[1px] h-3.5 flex items-center justify-center font-black">E</span>}
+                            </div>
+                            <span className="text-xs font-medium text-gray-400 group-hover:text-white transition-colors">{artistDisplayName}</span>
+                        </div>
+                        <span className="text-sm font-medium text-gray-400 tabular-nums">{formatDuration(song.duration)}</span>
+                    </div>
+
+                    <div className="mt-12 text-xs text-gray-500 space-y-1 px-2 font-medium">
+                        <p>{new Date(song.releaseDate).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</p>
+                        <p className="mt-4">{song.copyright}</p>
+                    </div>
+                </div>
             </div>
         </>
     );

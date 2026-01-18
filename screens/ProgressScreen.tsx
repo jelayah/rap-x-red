@@ -192,7 +192,7 @@ interface ProgressScreenProps {
     onSaveGame?: () => void;
 }
 
-const restoreDatesFromBundle = (state: GameStateBundle): void => {
+const restoreDatesFromBundle = (state: any): void => {
     state.gameDate = toDate(state.gameDate);
     const restoreItemDates = (item: any) => {
         if (item.releaseDate) item.releaseDate = toDate(item.releaseDate);
@@ -216,13 +216,12 @@ const restoreDatesFromBundle = (state: GameStateBundle): void => {
     state.albums.forEach(restoreItemDates);
     state.npcSongs.forEach(restoreItemDates);
     state.npcAlbums.forEach(restoreItemDates);
-    state.tours.forEach(tour => {
+    state.tours.forEach((tour: any) => {
         restoreItemDates(tour);
         tour.stops.forEach(restoreItemDates);
     });
-    state.notifications.forEach(n => n.date = toDate(n.date));
+    state.notifications.forEach((n: any) => n.date = toDate(n.date));
 };
-
 
 const ProgressScreen: React.FC<ProgressScreenProps> = ({ player, setPlayer, songs, setSongs, albums, setAlbums, merch, setMerch, promotions, setPromotions, schedule, setSchedule, tours, setTours, gameDate, setGameDate, events, setEvents, notifications, setNotifications, playlists, setPlaylists, npcSongs, setNpcSongs, npcAlbums, setNpcAlbums, chartsData, setChartsData, onSaveGame }) => {
     const [activeTab, setActiveTab] = useState<'overview' | 'notifications' | 'settings'>('overview');
@@ -237,11 +236,9 @@ const ProgressScreen: React.FC<ProgressScreenProps> = ({ player, setPlayer, song
         if (accepted) {
             setPlayer(p => p ? { ...p, money: p.money + event.offer.payout, reputation: p.reputation + event.offer.reputationGain } : p);
             let message = `You accepted the offer from ${event.artist.name} and earned $${event.offer.payout.toLocaleString()}.`;
-            
             if (event.type === 'feature_request') {
                 message = `You've agreed to feature on "${event.songDetails?.title}" with ${event.artist.name}. They'll let you know when it's ready for release.`;
             }
-
             setNotifications(n => [{
                 id: `event_accepted_${Date.now()}`,
                 message: message,
@@ -283,8 +280,8 @@ const ProgressScreen: React.FC<ProgressScreenProps> = ({ player, setPlayer, song
 
         setWeeklySummary({ 
             totalStreams: totalStreamsThisWeek,
-            topSongs: weeklySummarySongs, // top 5
-            topAlbums: top3AlbumsThisWeek // top 3
+            topSongs: weeklySummarySongs,
+            topAlbums: top3AlbumsThisWeek
         });
         setIsSimulating(false);
     }, [player, songs, albums, merch, promotions, schedule, gameDate, events, notifications, playlists, npcSongs, npcAlbums, chartsData, gameEvents, tours]);
@@ -350,7 +347,6 @@ const ProgressScreen: React.FC<ProgressScreenProps> = ({ player, setPlayer, song
 
     return (
         <div className="min-h-screen bg-[#07070B] relative overflow-hidden font-sans">
-            {/* Background elements consistent with Home */}
             <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-red-600/5 blur-[120px] rounded-full animate-pulse pointer-events-none"></div>
             <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/dark-matter.png')] opacity-10 pointer-events-none"></div>
 
@@ -367,14 +363,12 @@ const ProgressScreen: React.FC<ProgressScreenProps> = ({ player, setPlayer, song
                             <div className="w-1.5 h-1.5 rounded-full bg-red-600 animate-ping"></div>
                             <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.6em] text-red-500">Live Executive Feed</p>
                         </div>
-                        <h1 className="text-6xl sm:text-9xl font-black tracking-tighter uppercase leading-none italic drop-shadow-2xl">
-                            DASHBOARD
-                        </h1>
+                        <h1 className="text-6xl sm:text-9xl font-black tracking-tighter uppercase leading-none italic drop-shadow-2xl">DASHBOARD</h1>
                     </div>
                     <div className="flex items-center gap-3 animate-fade-in delay-200">
                         <button onClick={onSaveGame} className="group relative p-4 bg-white/5 rounded-2xl border border-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all shadow-xl active:scale-95 flex items-center gap-2">
                             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-.53 14.03a.75.75 0 001.06 0l3-3a.75.75 0 10-1.06-1.06l-1.72 1.72V8.25a.75.75 0 00-1.5 0v5.69l-1.72-1.72a.75.75 0 00-1.06 1.06l3 3z"/></svg>
-                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline group-hover:inline">Save Game</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest hidden sm:inline group-hover:inline">Save Career</span>
                         </button>
                         <button onClick={() => setIsGodMode(true)} className="p-4 bg-white/5 rounded-2xl border border-white/5 text-yellow-500/30 hover:text-yellow-400 hover:bg-yellow-400/5 transition-all shadow-xl active:scale-95">
                             <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12.963 2.286a.75.75 0 00-1.071 1.071L12.963 2.286zM21.75 12c0 .414.336.75.75.75s.75-.336.75-.75h-1.5zM12 21.75a.75.75 0 01-.75.75.75.75 0 010-1.5 1.5 1.5 0 001.5 1.5.75.75 0 010 1.5zM2.25 12a.75.75 0 01-.75-.75c0-.414.336.75.75-.75v1.5zm9.687-8.642a.75.75 0 00-1.071-1.071l1.07 1.07zM12 2.25A9.75 9.75 0 0121.75 12h1.5A11.25 11.25 0 0012 .75v1.5zM21.75 12A9.75 9.75 0 0112 21.75v1.5A11.25 11.25 0 0023.25 12h-1.5zM12 21.75A9.75 9.75 0 012.25 12v-1.5A11.25 11.25 0 0012 23.25v-1.5zM2.25 12A9.75 9.75 0 0111.963 2.286l-1.07-1.071A11.25 11.25 0 00.75 12v1.5z"/></svg>
@@ -451,7 +445,6 @@ const ProgressScreen: React.FC<ProgressScreenProps> = ({ player, setPlayer, song
                     </div>
                 )}
             </div>
-            
             <footer className="absolute bottom-8 left-0 right-0 text-center opacity-10 pointer-events-none hidden sm:block">
                 <p className="text-[8px] font-black text-gray-500 uppercase tracking-[0.8em]">SECURE CHANNEL • RAP X RED OPERATIONS</p>
             </footer>

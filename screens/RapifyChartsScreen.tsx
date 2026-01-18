@@ -35,8 +35,8 @@ const RapifyChartsScreen: React.FC<RapifyChartsScreenProps> = ({ allSongs, allAl
     }, [allSongs]);
 
     const topAlbums = useMemo(() => {
-        return allAlbums
-            .filter(a => !a.scheduledReleaseDate)
+        return [...allAlbums]
+            .filter(a => a.releaseDate) // Fixed: Check for releaseDate instead of absence of scheduledReleaseDate
             .map(album => {
                 const weeklyRapify = album.songs.reduce((acc, songInAlbum) => {
                     const fullSong = allSongs.find(s => s.id === songInAlbum.id);

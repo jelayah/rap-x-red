@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import type { Player } from '../types';
 
@@ -7,108 +8,73 @@ interface EditProfileModalProps {
     onClose: () => void;
 }
 
-const ImageInput: React.FC<{ label: string; currentImage: string | null; onImageChange: (base64: string | null) => void; unsplashQuery: string; }> = ({ label, currentImage, onImageChange, unsplashQuery }) => {
-    const [preview, setPreview] = useState<string | null>(currentImage);
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+const ImageBox: React.FC<{ label: string; sub: string; current: string | null; onUpdate: (b: string) => void }> = ({ label, sub, current, onUpdate }) => {
+    const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
             const reader = new FileReader();
-            reader.onloadend = () => {
-                const base64String = reader.result as string;
-                onImageChange(base64String);
-                setPreview(URL.createObjectURL(file));
-            };
+            reader.onloadend = () => onUpdate(reader.result as string);
             reader.readAsDataURL(file);
         }
     };
-
-    const displayImage = preview || `https://source.unsplash.com/800x450/?${encodeURIComponent(unsplashQuery)}`;
-
     return (
-        <div>
-            <label className="block text-brand-text-muted mb-2 font-semibold">{label}</label>
-            <div className="aspect-video bg-brand-surface rounded-md flex items-center justify-center overflow-hidden mb-2">
-                <img src={displayImage} alt={`${label} preview`} className="w-full h-full object-cover" />
+        <div className="space-y-4">
+            <div>
+                <p className="text-xs font-black uppercase text-white tracking-widest">{label}</p>
+                <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">{sub}</p>
             </div>
-            <input
-                type="file"
-                accept="image/png, image/jpeg"
-                onChange={handleFileChange}
-                className="block w-full text-sm text-brand-text-muted file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-brand-primary-start file:text-white hover:file:bg-brand-primary-end"
-            />
+            <div className="aspect-video bg-white/5 rounded-2xl border border-white/10 overflow-hidden relative group shadow-2xl">
+                {current ? <img src={current} className="w-full h-full object-cover" /> : <div className="absolute inset-0 flex items-center justify-center text-gray-700 text-[10px] font-black uppercase">No Media</div>}
+                <input type="file" onChange={handleFile} className="absolute inset-0 opacity-0 cursor-pointer z-10" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity pointer-events-none">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-white bg-red-600 px-4 py-2 rounded-full shadow-xl">Update Asset</span>
+                </div>
+            </div>
         </div>
     );
 };
 
-
 const EditProfileModal: React.FC<EditProfileModalProps> = ({ player, onSave, onClose }) => {
-    const [artistName, setArtistName] = useState(player.artistName);
-    const [bio, setBio] = useState(player.bio);
-    const [headerImage, setHeaderImage] = useState<string | null>(player.headerImage);
-    const [aboutImage, setAboutImage] = useState<string | null>(player.aboutImage);
+    const [name, setName] = useState(player.artistName);
+    const [bio, setBio] = useState(player.bio || '');
+    const [header, setHeader] = useState(player.headerImage);
+    const [about, setAbout] = useState(player.aboutImage);
 
-
-    const handleSave = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (artistName.trim() === '') {
-            alert('Artist Name cannot be empty.');
-            return;
-        }
-        onSave({
-            ...player,
-            artistName,
-            bio,
-            headerImage,
-            aboutImage,
-        });
-    };
-    
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-            <div className="bg-brand-dialog w-full max-w-2xl rounded-xl p-6 shadow-2xl border border-brand-surface animate-fade-in-up max-h-[90vh] overflow-y-auto">
-                <form onSubmit={handleSave}>
-                    <h2 className="text-2xl font-bold mb-6">Edit Profile</h2>
+        <div className="fixed inset-0 bg-black/95 z-[200] flex items-center justify-center p-4 backdrop-blur-2xl overflow-y-auto">
+            <div className="bg-[#0a0a0c] w-full max-w-4xl rounded-[3rem] border border-white/10 shadow-2xl flex flex-col max-h-[90vh] overflow-hidden animate-fade-in-up">
+                <header className="p-8 border-b border-white/5 flex justify-between items-center">
+                    <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white">Visual Identity</h2>
+                    <button onClick={onClose} className="p-3 bg-white/5 rounded-full hover:bg-white/10 text-gray-500 hover:text-white transition-all"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-6 h-6"><path d="M6 18L18 6M6 6l12 12" /></svg></button>
+                </header>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-4">
+                <div className="flex-1 overflow-y-auto p-8 sm:p-12 space-y-12 scrollbar-hide">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                        <div className="space-y-8">
                             <div>
-                                <label htmlFor="artistName" className="block text-brand-text-muted mb-1">Artist Name</label>
-                                <input 
-                                    type="text" 
-                                    id="artistName" 
-                                    value={artistName} 
-                                    onChange={(e) => setArtistName(e.target.value)} 
-                                    className="w-full bg-brand-surface p-3 rounded-md border border-brand-surface focus:outline-none focus:ring-2 focus:ring-brand-primary-end"
-                                    required 
-                                />
+                                <label className="block text-[10px] font-black uppercase tracking-[0.4em] text-gray-500 mb-3">Artist Designation</label>
+                                <input value={name} onChange={e => setName(e.target.value)} className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-white font-black italic text-2xl uppercase tracking-tighter outline-none focus:border-red-600 transition-all" />
                             </div>
-
                             <div>
-                                <label htmlFor="bio" className="block text-brand-text-muted mb-1">Bio</label>
-                                <textarea 
-                                    id="bio" 
-                                    value={bio} 
-                                    onChange={(e) => setBio(e.target.value)} 
-                                    className="w-full bg-brand-surface p-3 rounded-md border border-brand-surface focus:outline-none focus:ring-2 focus:ring-brand-primary-end h-32 resize-none"
-                                    placeholder="Tell the world about yourself..."
-                                    maxLength={300}
-                                />
-                                 <p className="text-right text-xs text-brand-text-muted mt-1">{bio.length} / 300</p>
+                                <label className="block text-[10px] font-black uppercase tracking-[0.4em] text-gray-500 mb-3">Public Biography</label>
+                                <textarea value={bio} onChange={e => setBio(e.target.value)} className="w-full bg-white/5 border border-white/10 p-5 rounded-2xl text-white font-medium text-sm h-40 outline-none focus:border-red-600 transition-all resize-none" placeholder="Enter artist narrative..." />
                             </div>
                         </div>
-
-                        <div className="space-y-4">
-                            <ImageInput label="Header Image" currentImage={player.headerImage} onImageChange={setHeaderImage} unsplashQuery={`${player.artistName}, music artist`} />
-                            <ImageInput label="About Image" currentImage={player.aboutImage} onImageChange={setAboutImage} unsplashQuery={`${player.artistName}, portrait`} />
+                        <div className="space-y-8">
+                             <ImageBox label="Header Asset" sub="Main Page Banner (Syncs to X / YouTube)" current={header} onUpdate={setHeader} />
+                             <ImageBox label="Portrait Asset" sub="System PFP (Syncs to all Profile Circles)" current={about} onUpdate={setAbout} />
                         </div>
                     </div>
+                </div>
 
-                    <div className="flex justify-end gap-4 mt-8">
-                        <button type="button" onClick={onClose} className="bg-brand-surface text-white py-2 px-6 rounded-md hover:opacity-80">Cancel</button>
-                        <button type="submit" className="bg-gradient-to-r from-brand-primary-start to-brand-primary-end text-white font-bold py-2 px-6 rounded-md hover:opacity-90">Save Changes</button>
-                    </div>
-                </form>
+                <footer className="p-8 bg-black border-t border-white/5 flex justify-end">
+                    <button 
+                        onClick={() => onSave({ ...player, artistName: name, bio, headerImage: header, aboutImage: about })}
+                        className="bg-white text-black font-black py-4 px-12 rounded-full text-xs uppercase tracking-widest hover:scale-105 active:scale-95 shadow-2xl transition-all"
+                    >
+                        Save Protocol
+                    </button>
+                </footer>
             </div>
         </div>
     );

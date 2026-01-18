@@ -29,7 +29,7 @@ const RappleChartsScreen: React.FC<RappleChartsScreenProps> = ({ allSongs, allAl
 
     const topAlbums = useMemo(() => {
         return [...allAlbums]
-            .filter(a => !a.scheduledReleaseDate)
+            .filter(a => a.releaseDate) // Fixed: Filter by releaseDate presence
             .map(album => {
                 const rapplePerformance = album.songs.reduce((acc, s) => {
                     const fullSong = allSongs.find(fs => fs.id === s.id);

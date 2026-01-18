@@ -113,9 +113,9 @@ export const LABELS = [
 ];
 
 export const difficultySettings = {
-    [Difficulty.Easy]: { stream: 1.25, cost: 0.75, hypeDecay: 0.04, mlRatio: 0.35 },
-    [Difficulty.Realistic]: { stream: 1.0, cost: 1.0, hypeDecay: 0.08, mlRatio: 0.22 },
-    [Difficulty.Hard]: { stream: 0.75, cost: 1.5, hypeDecay: 0.12, mlRatio: 0.15 },
+    [Difficulty.Easy]: { stream: 1.10, cost: 0.85, hypeDecay: 0.05, mlRatio: 0.25 },
+    [Difficulty.Realistic]: { stream: 0.80, cost: 1.0, hypeDecay: 0.10, mlRatio: 0.15 },
+    [Difficulty.Hard]: { stream: 0.38, cost: 1.8, hypeDecay: 0.22, mlRatio: 0.10 },
 };
 
 export const RECORDS: Record<string, { message: (title: string, sales?: string) => string }> = {
@@ -130,24 +130,23 @@ export const RECORDS: Record<string, { message: (title: string, sales?: string) 
     diamondSingle: { message: (title) => `A timeless classic! "${title}" has officially been certified DIAMOND, selling over 10,000,000 units!` },
 };
 
-export const PROMO_DATA: PromoInfo[] = [
+export const PROMO_DATA: (PromoInfo & { disabled?: boolean })[] = [
     // Boosts
-    { type: 'BottledStreams', title: 'Bottled Streams', description: "Purchase fake streams to boost numbers. High risk of chart removal.", iconPath: "...", category: 'boosts', risk: 'High', baseCost: 10000, durationWeeks: 1, target: 'Song' },
-    { type: 'PRScandal', title: 'Fake PR Scandal', description: "Pay to create viral controversy. Drives massive attention but hurts brand image.", iconPath: "...", category: 'boosts', risk: 'Extreme', baseCost: 150000, durationWeeks: 2, target: 'Any' },
-    { type: 'BuyingParty', title: 'Buying Party', description: "Organize mass-buy events to spike chart positions. Effective for debut week.", iconPath: "...", category: 'boosts', risk: 'Medium', baseCost: 45000, durationWeeks: 1, target: 'Any' },
-    { type: 'PromoBots', title: 'Promo Bots', description: "Unleash bots to spam social media. Quick exposure, high risk of backlash.", iconPath: "...", category: 'boosts', risk: 'High', baseCost: 20000, durationWeeks: 2, target: 'Any' },
+    { type: 'BottledStreams', title: 'Bottled Streams', description: "Purchase fake streams to boost numbers. High risk of chart removal. (~+60% boost at base cost).", iconPath: "...", category: 'boosts', risk: 'High', baseCost: 10000, durationWeeks: 1, target: 'Song' },
+    { type: 'PRScandal', title: 'Fake PR Scandal', description: "Pay to create viral controversy. Drives massive attention but hurts brand image. (~+80% boost).", iconPath: "...", category: 'boosts', risk: 'Extreme', baseCost: 150000, durationWeeks: 2, target: 'Any' },
+    { type: 'BuyingParty', title: 'Buying Party', description: "Organize mass-buy events to spike sales positions. Doubles weekly sales units.", iconPath: "...", category: 'boosts', risk: 'Medium', baseCost: 45000, durationWeeks: 1, target: 'Any' },
+    { type: 'PromoBots', title: 'Promo Bots', description: "Unleash bots to spam social media. Quick exposure, risk of platform flags. (~+30% boost).", iconPath: "...", category: 'boosts', risk: 'High', baseCost: 20000, durationWeeks: 2, target: 'Any' },
     
     // Industry
-    { type: 'RadioPayola', title: 'National Radio Push', description: "Pay for national airplay rotation. Essential for Hot 100 dominance.", iconPath: "...", category: 'industry', risk: 'Medium', baseCost: 250000, durationWeeks: 4, target: 'Song' },
-    { type: 'PlaylistBribe', title: 'Editorial Placement', description: "Bribe curators for top placement. Massive organic growth.", iconPath: "...", category: 'industry', risk: 'High', baseCost: 500000, durationWeeks: 2, target: 'Song' },
-    { type: 'MagazineCover', title: 'Magazine Cover Story', description: "Secure a cover story on a major magazine like Billboard or Rolling Stone.", iconPath: "...", category: 'industry', risk: 'None', baseCost: 125000, durationWeeks: 3, target: 'Album' },
-    { type: 'Sponsorship', title: 'Major Brand Deal', description: "Announce a multi-million dollar partnership with a global brand.", iconPath: "...", category: 'industry', risk: 'None', baseCost: 200000, durationWeeks: 4, target: 'Any' },
-    { type: 'Sponsorship', title: 'Elite Feature Run', description: "Series of high-profile features on superstar tracks. Massive reputation gain.", iconPath: "...", category: 'industry', risk: 'Low', baseCost: 750000, durationWeeks: 4, target: 'Any' },
+    { type: 'RadioPayola', title: 'National Radio Push', description: "UNAVAILABLE: National airplay protocols are currently offline.", iconPath: "...", category: 'industry', risk: 'Medium', baseCost: 250000, durationWeeks: 4, target: 'Song', disabled: true },
+    { type: 'PlaylistBribe', title: 'Editorial Placement', description: "Bribe curators for top placement. (~+150% boost at base cost).", iconPath: "...", category: 'industry', risk: 'High', baseCost: 500000, durationWeeks: 2, target: 'Song' },
+    { type: 'MagazineCover', title: 'Magazine Cover Story', description: "Secure a cover story on major press. Major reputation boost (~+40%).", iconPath: "...", category: 'industry', risk: 'None', baseCost: 125000, durationWeeks: 3, target: 'Album' },
+    { type: 'Sponsorship', title: 'Major Brand Deal', description: "Global brand partnership. Moderate reach boost (~+30%).", iconPath: "...", category: 'industry', risk: 'None', baseCost: 200000, durationWeeks: 4, target: 'Any' },
 
     // Organic
-    { type: 'StreetTeam', title: 'Global Street Team', description: "Physical promo: flyers, billboards, and pop-up events worldwide.", iconPath: "...", category: 'organic', risk: 'Low', baseCost: 85000, durationWeeks: 6, target: 'Any' },
-    { type: 'ListeningParty', title: 'Exclusive Listening', description: "Host a star-studded listening event for critics. Boosts first-week units.", iconPath: "...", category: 'organic', risk: 'Low', baseCost: 65000, durationWeeks: 1, target: 'Album' },
-    { type: 'TalkShowCircuit', title: 'Talk Show Circuit', description: "Appear on Fallon, Kimmel, and top podcasts to promote your era.", iconPath: "...", category: 'organic', risk: 'None', baseCost: 110000, durationWeeks: 3, target: 'Album' }
+    { type: 'StreetTeam', title: 'Global Street Team', description: "Physical promo: flyers, billboards, and pop-ups. (~+25% boost).", iconPath: "...", category: 'organic', risk: 'Low', baseCost: 85000, durationWeeks: 6, target: 'Any' },
+    { type: 'ListeningParty', title: 'Exclusive Listening', description: "Host a star-studded listening event for critics. (~+50% boost).", iconPath: "...", category: 'organic', risk: 'Low', baseCost: 65000, durationWeeks: 1, target: 'Album' },
+    { type: 'TalkShowCircuit', title: 'Talk Show Circuit', description: "Appear on major late-night shows to promote the era. (~+35% boost).", iconPath: "...", category: 'organic', risk: 'None', baseCost: 110000, durationWeeks: 3, target: 'Album' }
 ];
 
 export const TV_SHOWS = [

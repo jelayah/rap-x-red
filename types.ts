@@ -24,6 +24,30 @@ export enum Experience {
   AList = 'A-List Star',
 }
 
+export interface PlayerJob {
+    id: string;
+    role: string;
+    employer: string;
+    weeksLeft: number;
+    totalWeeks: number;
+    biWeeklyPay: number;
+    weeklyEnergyCost: number;
+}
+
+export interface JobOpening {
+    id: string;
+    role: string;
+    employer: string;
+    description: string;
+    durationWeeks: number;
+    totalPay: number;
+    biWeeklyPay: number;
+    weeklyEnergyCost: number;
+    minReputation: number;
+    minExperience: Experience;
+    minSkills?: Partial<Record<'flow' | 'production' | 'mixing' | 'mastering', number>>;
+}
+
 export interface PitchforkReview {
     score: number;
     summary: string;
@@ -48,7 +72,7 @@ export interface Transaction {
 
 export interface SocialPost {
     id: string;
-    type: 'Manual';
+    type: 'Manual' | 'System';
     image?: string; 
     images?: string[]; 
     caption: string;
@@ -68,6 +92,7 @@ export interface SocialPost {
         verified: boolean;
     };
     songId?: string; 
+    authorOverride?: string;
 }
 
 export interface Contract {
@@ -78,6 +103,13 @@ export interface Contract {
     albumsLeft: number;
     singlesLeft: number;
     description: string;
+}
+
+export interface GrammyNomination {
+    category: string;
+    itemId?: string; // ID of the song/album
+    year: number;
+    isWin: boolean;
 }
 
 export interface Player {
@@ -111,8 +143,11 @@ export interface Player {
   transactions: Transaction[];
   startingExperience?: Experience;
   awards?: string[];
+  grammyHistory: GrammyNomination[];
+  grammySubmissions: { category: string, itemId?: string, year: number }[];
   chartStreak: number; 
   bestChartStreak: number;
+  currentJob: PlayerJob | null;
   settings: {
     showSystemNotifs: boolean;
     showToasts: boolean;
@@ -191,10 +226,12 @@ export interface Song {
   youtubeThumbnail?: string | null;
   pendingTikTokPromo?: boolean;
   tiktokPromoCooldown?: number; 
+  tiktokPromoIntensity?: number;
   vevoWatermark?: boolean;
   pitchforkReview?: PitchforkReview;
   rawPerformance?: number;
   updatedThisCycle?: boolean;
+  nameChanged?: boolean;
 }
 
 export interface Album {
@@ -249,6 +286,7 @@ export interface Album {
   presaleLinkPosted?: boolean;
   rawPerformance?: number;
   updatedThisCycle?: boolean;
+  nameChanged?: boolean;
 }
 
 export interface ScheduleItem {
@@ -261,7 +299,7 @@ export interface ScheduleItem {
 export interface Notification {
     id: string;
     message: string;
-    type: 'Chart' | 'Debut' | 'Event' | 'System' | 'Playlist' | 'Sales' | 'Merch' | 'Record' | 'Scandal' | 'Tour';
+    type: 'Chart' | 'Debut' | 'Event' | 'System' | 'Playlist' | 'Sales' | 'Merch' | 'Record' | 'Scandal' | 'Tour' | 'Award';
     date: Date;
     partnershipData?: {
         id: string;
@@ -303,6 +341,8 @@ export interface ChartEntry {
     itemType: 'song' | 'album';
     status?: 'new' | 're-entry' | 'up' | 'down' | 'same' | 'departed' | null;
     chartId?: ChartId; 
+    weeklyUnits?: number;
+    weeklyStreams?: number;
 }
 
 export type ChartData = Record<ChartId, ChartEntry[]>;
@@ -526,4 +566,5 @@ export interface Tweet {
         artistName: string;
         coverArt: string;
     };
+    authorOverride?: string;
 }

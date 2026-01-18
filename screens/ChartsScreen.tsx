@@ -1,7 +1,6 @@
 
 import React, { useState, useMemo } from 'react';
 import type { ChartData, ChartEntry, Song, Album, Player, ChartId } from '../types';
-import { CHART_NAMES } from '../constants';
 import ChartDetailsModal from '../components/ChartDetailsModal';
 
 interface ChartsScreenProps {
@@ -13,29 +12,26 @@ interface ChartsScreenProps {
 }
 
 type TabType = 'hot100' | 'bubbling' | 'albums200' | 'history';
-type HistoryFilter = 'all' | 'hot100' | 'bubbling' | 'albums200';
+
+const formatCompact = (num: number | undefined | null) => {
+    const val = typeof num === 'number' ? num : 0;
+    if (val >= 1000000) return `${(val / 1000000).toFixed(1)}M`;
+    if (val >= 1000) return `${(val / 1000).toFixed(1)}K`;
+    return Math.floor(val).toLocaleString();
+};
+
+const HistoryStatBox: React.FC<{ label: string; value: number; sub: string }> = ({ label, value, sub }) => (
+    <div className="bg-[#0a0a0c] border border-white/10 p-4 sm:p-6 flex flex-col items-center justify-center text-center flex-1 min-w-[80px]">
+        <p className="text-white font-black text-4xl sm:text-6xl italic tracking-tighter leading-none mb-4">{value}</p>
+        <div className="w-full h-[1px] bg-white/10 mb-4"></div>
+        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest leading-tight">{sub}</p>
+    </div>
+);
 
 const ChartsScreen: React.FC<ChartsScreenProps> = ({ player, chartsData, gameDate, allSongs, allAlbums }) => {
     const [activeTab, setActiveTab] = useState<TabType>('hot100');
-    const [historyFilter, setHistoryFilter] = useState<HistoryFilter>('all');
+    const [historyChartId, setHistoryChartId] = useState<ChartId>('hot100');
     const [viewingItemId, setViewingItemId] = useState<string | null>(null);
-
-    const playerItemsOnCharts = useMemo(() => {
-        // Collect all songs and albums that have ranked at least once
-        const items = [...allSongs, ...allAlbums].filter(item => 
-            item.artistName === player.artistName && 
-            item.chartHistory && 
-            Object.keys(item.chartHistory).length > 0
-        );
-        // Sort by most recent peak date if available, otherwise by title
-        return items.sort((a,b) => {
-            const historyA = Object.values(a.chartHistory || {}) as Array<{ peakDate: Date }>;
-            const historyB = Object.values(b.chartHistory || {}) as Array<{ peakDate: Date }>;
-            const dateA = historyA[0]?.peakDate || 0;
-            const dateB = historyB[0]?.peakDate || 0;
-            return new Date(dateB).getTime() - new Date(dateA).getTime();
-        });
-    }, [allSongs, allAlbums, player.artistName]);
 
     const activeChartEntries = useMemo(() => {
         if (activeTab === 'hot100') return chartsData.hot100 || [];
@@ -44,32 +40,27 @@ const ChartsScreen: React.FC<ChartsScreenProps> = ({ player, chartsData, gameDat
         return [];
     }, [activeTab, chartsData]);
 
-    const filteredHistory = useMemo(() => {
-        if (historyFilter === 'all') return playerItemsOnCharts;
-        return playerItemsOnCharts.filter(item => {
-            const historyKeys = Object.keys(item.chartHistory);
-            if (historyFilter === 'hot100') return historyKeys.includes('hot100');
-            if (historyFilter === 'bubbling') return historyKeys.includes('bubblingUnderHot50');
-            if (historyFilter === 'albums200') return historyKeys.includes('billboard200');
-            return true;
+    const playerHistoryItems = useMemo(() => {
+        return [...allSongs, ...allAlbums].filter(item => 
+            item.artistName === player.artistName && 
+            item.chartHistory && 
+            item.chartHistory[historyChartId]
+        ).sort((a,b) => {
+            const dateA = a.chartHistory[historyChartId]?.peakDate || new Date(0);
+            const dateB = b.chartHistory[historyChartId]?.peakDate || new Date(0);
+            return new Date(dateB).getTime() - new Date(dateA).getTime();
         });
-    }, [playerItemsOnCharts, historyFilter]);
+    }, [allSongs, allAlbums, player.artistName, historyChartId]);
 
     const stats = useMemo(() => {
-        let ones = 0;
-        let tens = 0;
-        playerItemsOnCharts.forEach(item => {
-            const histories = Object.entries(item.chartHistory);
-            const overallPeak = Math.min(...histories.map(([_, h]: [any, any]) => h.peakPosition));
-            if (overallPeak === 1) ones++;
-            if (overallPeak <= 10) tens++;
-        });
-        return { ones, tens, total: playerItemsOnCharts.length };
-    }, [playerItemsOnCharts]);
-
-    const viewingItem = viewingItemId 
-        ? [...allSongs, ...allAlbums].find(item => item.id === viewingItemId)
-        : null;
+        const items = [...allSongs, ...allAlbums].filter(i => i.artistName === player.artistName);
+        const hot100Items = items.filter(i => i.chartHistory?.hot100);
+        return {
+            no1Hits: items.filter(i => Object.values(i.chartHistory).some((h: any) => h.peakPosition === 1)).length,
+            totalSongs: hot100Items.length,
+            top10Hits: hot100Items.filter(i => (i.chartHistory?.hot100?.peakPosition || 11) <= 10).length
+        };
+    }, [allSongs, allAlbums, player.artistName]);
 
     const TabButton: React.FC<{ id: TabType; label: string }> = ({ id, label }) => (
         <button 
@@ -85,10 +76,9 @@ const ChartsScreen: React.FC<ChartsScreenProps> = ({ player, chartsData, gameDat
         return (
             <div 
                 onClick={() => setViewingItemId(entry.itemId)}
-                className="group flex items-center gap-4 py-4 px-2 border-b border-white/5 hover:bg-white/5 transition-all cursor-pointer relative overflow-hidden"
+                className="group flex items-center gap-4 py-4 px-2 border-b border-white/5 hover:bg-white/5 transition-all cursor-pointer relative"
             >
-                {isPlayer && <div className="absolute inset-y-0 left-0 w-1 bg-red-600"></div>}
-                <div className="w-12 text-center flex-shrink-0">
+                <div className="w-10 text-center flex-shrink-0">
                     <span className={`text-2xl font-black italic tracking-tighter ${index < 3 ? 'text-white' : 'text-gray-800 group-hover:text-gray-600'}`}>
                         {entry.position}
                     </span>
@@ -98,20 +88,21 @@ const ChartsScreen: React.FC<ChartsScreenProps> = ({ player, chartsData, gameDat
                 </div>
                 <div className="flex-grow min-w-0">
                     <h3 className={`font-black text-base md:text-lg uppercase italic tracking-tighter truncate ${isPlayer ? 'text-red-500' : 'text-white'}`}>{entry.title}</h3>
-                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest truncate mt-0.5">{entry.artist}</p>
+                    <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest truncate">{entry.artist}</p>
                 </div>
-                <div className="flex flex-col items-end gap-1 flex-shrink-0">
+                <div className="flex flex-col items-end gap-1 flex-shrink-0 pr-2">
                     <div className="flex items-center gap-2">
                         {entry.status === 'up' && <span className="text-green-500 text-[10px] font-black">▲</span>}
                         {entry.status === 'down' && <span className="text-red-500 text-[10px] font-black">▼</span>}
-                        {entry.status === 'new' && <span className="bg-blue-600 text-white text-[8px] font-black px-1.5 py-0.5 rounded shadow-lg">NEW</span>}
-                        <span className="text-[10px] font-black text-gray-600 uppercase tabular-nums">Peak {entry.peakPosition}</span>
+                        <span className="text-[9px] font-black text-gray-600 uppercase tabular-nums">Peak {entry.peakPosition}</span>
                     </div>
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter">{entry.weeksOnChart} WKS</span>
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter tabular-nums">{entry.weeksOnChart} WKS</span>
                 </div>
             </div>
         );
     };
+
+    const viewingItem = viewingItemId ? [...allSongs, ...allAlbums].find(item => item.id === viewingItemId) : null;
 
     return (
         <div className="min-h-screen bg-[#07070B] relative overflow-hidden font-sans">
@@ -119,104 +110,107 @@ const ChartsScreen: React.FC<ChartsScreenProps> = ({ player, chartsData, gameDat
             
             {viewingItem && <ChartDetailsModal item={viewingItem} onClose={() => setViewingItemId(null)} />}
 
-            <div className="relative z-10 p-4 sm:p-12 space-y-10 pb-40 max-w-5xl mx-auto">
+            <div className="relative z-10 p-4 sm:p-12 space-y-10 pb-40 max-w-6xl mx-auto">
                 <header className="border-b-4 sm:border-b-8 border-white pb-8 sm:pb-12">
                     <div className="flex items-center gap-2 mb-3">
                         <div className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse"></div>
                         <p className="text-[9px] sm:text-[10px] font-black uppercase tracking-[0.6em] text-red-500">Official Industry Rankings</p>
                     </div>
                     <h1 className="text-6xl sm:text-[10rem] font-black tracking-tighter uppercase leading-none italic drop-shadow-2xl text-white">CHARTS</h1>
-                    <p className="text-gray-500 font-bold text-xs sm:text-sm tracking-widest uppercase mt-4">Week of {gameDate.toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</p>
                 </header>
 
                 <div className="sticky top-0 z-20 bg-[#07070B]/95 backdrop-blur-xl border-b border-white/5 -mx-4 px-4">
                     <div className="flex gap-1 overflow-x-auto scrollbar-hide">
                         <TabButton id="hot100" label="Hot 100" />
-                        <TabButton id="bubbling" label="Bubbling" />
+                        <TabButton id="bubbling" label="Bubbling 50" />
                         <TabButton id="albums200" label="B200" />
-                        <TabButton id="history" label="My History" />
+                        <TabButton id="history" label="Archives" />
                     </div>
                 </div>
 
                 <main className="animate-fade-in">
                     {activeTab === 'history' ? (
                         <div className="space-y-12">
-                            <section className="flex flex-col md:flex-row gap-8 items-center bg-white/5 p-8 rounded-[3rem] border border-white/5 shadow-2xl relative overflow-hidden">
-                                <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
-                                     <svg className="w-40 h-40" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                            {/* Dashboard Row */}
+                            <div className="flex flex-col sm:flex-row gap-4 items-stretch">
+                                <div className="bg-[#fa2d48] rounded-sm p-4 w-full sm:w-64 flex flex-col items-center justify-center shadow-xl">
+                                    <p className="text-black font-black text-2xl uppercase tracking-tighter leading-none mb-1 text-center">BILLBOARD</p>
+                                    <p className="text-black font-black text-2xl uppercase tracking-tighter leading-none text-center">
+                                        {historyChartId === 'hot100' ? 'HOT 100™' : historyChartId === 'bubblingUnderHot50' ? 'BUBBLING UNDER HOT 50™' : '200™'}
+                                    </p>
                                 </div>
-                                <div className="w-40 h-40 rounded-[2.5rem] overflow-hidden border-2 border-red-600/30 flex-shrink-0 shadow-2xl rotate-2">
-                                    <img src={player.aboutImage || `https://source.unsplash.com/400x400/?${encodeURIComponent(player.artistName + ' portrait')}`} className="w-full h-full object-cover" alt={player.artistName} />
-                                </div>
-                                <div className="flex-grow text-center md:text-left space-y-6">
-                                    <div>
-                                        <p className="text-[#fa2d48] font-black uppercase tracking-[0.3em] text-[10px] mb-1">Career Catalog Resume</p>
-                                        <h2 className="text-4xl sm:text-5xl font-black italic uppercase tracking-tighter leading-none text-white">{player.artistName}</h2>
+                                <div className="flex flex-1 gap-2 overflow-x-auto scrollbar-hide">
+                                    <div className="bg-[#0a0a0c] border border-white/10 p-1 w-24 sm:w-32 flex-shrink-0 overflow-hidden">
+                                        <img src={player.aboutImage || `https://source.unsplash.com/200x200/?portrait`} className="w-full h-full object-cover" alt="Artist Profile" />
                                     </div>
-                                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                                        <div className="text-center md:text-left">
-                                            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Total Hits</p>
-                                            <p className="text-3xl font-black italic text-white leading-none tabular-nums">{stats.total}</p>
-                                        </div>
-                                        <div className="text-center md:text-left">
-                                            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Top 10s</p>
-                                            <p className="text-3xl font-black italic text-red-500 leading-none tabular-nums">{stats.tens}</p>
-                                        </div>
-                                        <div className="text-center md:text-left">
-                                            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Number 1s</p>
-                                            <p className="text-3xl font-black italic text-white leading-none tabular-nums">{stats.ones}</p>
-                                        </div>
-                                        <div className="text-center md:text-left">
-                                            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">Consecutive</p>
-                                            <p className="text-3xl font-black italic text-red-500 leading-none tabular-nums">{player.chartStreak}</p>
-                                        </div>
-                                    </div>
+                                    <HistoryStatBox label="NO. 1 HITS" value={historyChartId === 'billboard200' ? allAlbums.filter(a => a.artistName === player.artistName && a.chartHistory?.billboard200?.peakPosition === 1).length : stats.no1Hits} sub="NO. 1 HITS" />
+                                    <HistoryStatBox label="SONGS" value={historyChartId === 'billboard200' ? allAlbums.filter(a => a.artistName === player.artistName).length : stats.totalSongs} sub={historyChartId === 'billboard200' ? "TITLES" : "SONGS"} />
+                                    <HistoryStatBox label="TOP 10 HITS" value={historyChartId === 'billboard200' ? allAlbums.filter(a => a.artistName === player.artistName && (a.chartHistory?.billboard200?.peakPosition || 11) <= 10).length : stats.top10Hits} sub="TOP 10 HITS" />
                                 </div>
-                            </section>
+                            </div>
 
-                            <div className="space-y-6">
-                                <div className="flex items-center gap-4">
-                                    <h3 className="text-[10px] font-black uppercase tracking-[0.4em] text-gray-500">Historical Breakdown</h3>
-                                    <div className="h-[1px] flex-grow bg-white/5"></div>
-                                    <div className="flex bg-[#12121e] rounded-full p-1 border border-white/10">
-                                        {(['all', 'hot100', 'bubbling', 'albums200'] as HistoryFilter[]).map(f => (
-                                            <button 
-                                                key={f} 
-                                                onClick={() => setHistoryFilter(f)}
-                                                className={`px-4 py-1.5 rounded-full text-[8px] font-black uppercase tracking-widest transition-all ${historyFilter === f ? 'bg-white text-black' : 'text-gray-500 hover:text-white'}`}
-                                            >
-                                                {f === 'albums200' ? 'B200' : f}
-                                            </button>
-                                        ))}
-                                    </div>
+                            {/* Dropdown Selector */}
+                            <div className="flex justify-between items-center bg-[#0a0a0c] border border-white/10 px-4 py-2 mt-8">
+                                <div className="flex items-center gap-3 border border-[#fa2d48] px-4 py-2 min-w-[250px]">
+                                    <select 
+                                        value={historyChartId} 
+                                        onChange={e => setHistoryChartId(e.target.value as ChartId)}
+                                        className="bg-transparent text-[#fa2d48] font-black uppercase tracking-tighter text-sm outline-none cursor-pointer w-full"
+                                    >
+                                        <option value="hot100" className="bg-[#0a0a0c]">Billboard Hot 100™</option>
+                                        <option value="bubblingUnderHot50" className="bg-[#0a0a0c]">Bubbling Under Hot 50™</option>
+                                        <option value="billboard200" className="bg-[#0a0a0c]">Billboard 200™</option>
+                                    </select>
+                                    <svg className="w-4 h-4 text-[#fa2d48]" fill="currentColor" viewBox="0 0 20 20"><path d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" /></svg>
                                 </div>
+                                <div className="hidden sm:flex gap-12 text-[10px] font-black uppercase text-[#fa2d48] tracking-tighter">
+                                    <span className="w-24 text-center">DEBUT DATE</span>
+                                    <span className="w-16 text-center">PEAK POS.</span>
+                                    <span className="w-24 text-center">PEAK DATE</span>
+                                    <span className="w-20 text-center">WKS. ON CHART</span>
+                                </div>
+                            </div>
 
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    {filteredHistory.length > 0 ? filteredHistory.map((item) => (
-                                        <div 
-                                            key={item.id} 
-                                            onClick={() => setViewingItemId(item.id)}
-                                            className="flex items-center gap-5 p-5 bg-[#12121e] rounded-[2.5rem] border border-white/5 hover:border-red-600/30 transition-all cursor-pointer group shadow-xl"
-                                        >
-                                            <img src={item.coverArt || "https://thumbs2.imgbox.com/53/9d/TPyXhrMO_t.jpg"} className="w-16 h-16 rounded-2xl object-cover shadow-lg group-hover:scale-105 transition-transform" alt={item.title} />
-                                            <div className="flex-grow min-w-0">
-                                                <h4 className="font-black text-lg uppercase italic text-white tracking-tighter leading-none truncate group-hover:text-red-500 transition-colors">{item.title}</h4>
-                                                <div className="flex flex-wrap gap-2 mt-2">
-                                                    {Object.entries(item.chartHistory).map(([cId, history]: [string, any]) => (
-                                                        <span key={cId} className={`text-[8px] font-black uppercase whitespace-nowrap bg-black/40 px-2.5 py-1 rounded-full border ${history.peakPosition === 1 ? 'border-red-500/50 text-red-500' : 'border-white/5 text-gray-500'}`}>
-                                                            {cId === 'hot100' ? 'H100' : cId === 'billboard200' ? 'B200' : 'BU50'} • Peak #{history.peakPosition} • {history.weeksOnChart} WKS
-                                                        </span>
-                                                    ))}
+                            {/* History Table */}
+                            <div className="space-y-2">
+                                {playerHistoryItems.map(item => {
+                                    const h = item.chartHistory[historyChartId];
+                                    if (!h) return null;
+                                    return (
+                                        <div key={item.id} className="bg-white p-4 flex flex-col sm:flex-row items-center border-b border-gray-200">
+                                            <div className="flex items-center gap-4 flex-1 w-full min-w-0">
+                                                <div className="min-w-0">
+                                                    <h4 className="text-2xl font-black text-black leading-none mb-1 truncate">{item.title}</h4>
+                                                    <p className="text-sm font-medium text-gray-500 truncate">{player.artistName}</p>
                                                 </div>
                                             </div>
-                                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={3} stroke="currentColor" className="w-5 h-5 text-gray-800 group-hover:text-white group-hover:translate-x-1 transition-all"><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>
+                                            <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-12 mt-4 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+                                                <div className="w-24 text-center">
+                                                    <p className="text-[7px] font-black text-gray-400 uppercase mb-1 sm:hidden">Debut</p>
+                                                    <p className="text-xs font-black text-black underline decoration-black/20 underline-offset-4">{new Date(item.releaseDate).toLocaleDateString()}</p>
+                                                </div>
+                                                <div className="w-16 text-center border-x border-gray-100 px-2 flex flex-col items-center">
+                                                    <p className="text-[7px] font-black text-gray-400 uppercase mb-1 sm:hidden">Peak</p>
+                                                    <p className="text-3xl font-black text-black leading-none">{h.peakPosition}</p>
+                                                    {h.peakPosition === 1 && <p className="text-[7px] font-black bg-[#fa2d48] text-white px-1 mt-1">1 WKS</p>}
+                                                </div>
+                                                <div className="w-24 text-center">
+                                                    <p className="text-[7px] font-black text-gray-400 uppercase mb-1 sm:hidden">Peak Date</p>
+                                                    <p className="text-xs font-black text-black underline decoration-black/20 underline-offset-4">{new Date(h.peakDate).toLocaleDateString()}</p>
+                                                </div>
+                                                <div className="w-20 text-center">
+                                                    <p className="text-[7px] font-black text-gray-400 uppercase mb-1 sm:hidden">Weeks</p>
+                                                    <p className="text-3xl font-black text-black leading-none tabular-nums">{h.weeksOnChart}</p>
+                                                </div>
+                                            </div>
                                         </div>
-                                    )) : (
-                                        <div className="col-span-2 py-20 text-center border-2 border-dashed border-white/5 rounded-[3rem]">
-                                            <p className="text-gray-700 font-black uppercase italic tracking-widest text-xs">No entries found. Release music to build your history.</p>
-                                        </div>
-                                    )}
-                                </div>
+                                    );
+                                })}
+                                {playerHistoryItems.length === 0 && (
+                                    <div className="py-20 text-center opacity-30">
+                                        <p className="text-xs font-black uppercase tracking-widest italic text-white">No data records found.</p>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ) : (
@@ -231,10 +225,6 @@ const ChartsScreen: React.FC<ChartsScreenProps> = ({ player, chartsData, gameDat
                         </div>
                     )}
                 </main>
-
-                <footer className="py-20 text-center opacity-10">
-                    <p className="text-[9px] font-black uppercase tracking-[0.8em]">Proprietary Data Ingest • RED MIC OPERATIONS</p>
-                </footer>
             </div>
         </div>
     );

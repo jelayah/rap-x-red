@@ -28,12 +28,12 @@ const RapTunesStoreScreen: React.FC<RapTunesStoreScreenProps> = ({ player, songs
     const allReleasedAlbums = useMemo(() => {
         const a = Array.isArray(albums) ? albums : [];
         const na = Array.isArray(npcAlbums) ? npcAlbums : [];
-        return [...a, ...na].filter(item => !item.scheduledReleaseDate);
+        return [...a, ...na].filter(item => item.releaseDate); // Fixed: Filter by releaseDate presence
     }, [albums, npcAlbums]);
 
     const recentReleases = useMemo(() => {
         return [...allReleasedAlbums, ...allReleasedSongs.filter(s => !s.albumId)]
-            .sort((a, b) => new Date(b.releaseDate).getTime() - new Date(a.releaseDate).getTime())
+            .sort((a, b) => new Date(b.releaseDate!).getTime() - new Date(a.releaseDate!).getTime())
             .slice(0, 18);
     }, [allReleasedSongs, allReleasedAlbums]);
 
